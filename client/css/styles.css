@@ -1,8 +1,10 @@
 :root {
-    --primary-color: #4a90e2;
-    --secondary-color: #2c3e50;
-    --background-color: #f5f6fa;
-    --text-color: #2c3e50;
+    --primary-color: #606c38;     /* Dark moss green */
+    --secondary-color: #283618;   /* Pakistan green */
+    --background-color: #fefae0;  /* Cornsilk */
+    --accent-color: #dda15e;      /* Earth yellow */
+    --accent-dark: #bc6c25;       /* Tiger's Eye */
+    --text-color: #283618;        /* Pakistan green */
     --border-radius: 8px;
 }
 
@@ -20,7 +22,7 @@ body {
 }
 
 header {
-    background-color: white;
+    background-color: var(--primary-color);
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     padding: 1rem 2rem;
 }
@@ -36,7 +38,7 @@ nav {
 .logo {
     font-size: 1.5rem;
     font-weight: bold;
-    color: var(--primary-color);
+    color: var(--background-color);
 }
 
 nav ul {
@@ -47,13 +49,13 @@ nav ul {
 
 nav a {
     text-decoration: none;
-    color: var(--text-color);
+    color: var(--background-color);
     font-weight: 500;
     transition: color 0.3s ease;
 }
 
 nav a:hover, nav a.active {
-    color: var(--primary-color);
+    color: var(--accent-color);
 }
 
 main {
@@ -83,11 +85,12 @@ main {
     padding: 2rem;
     background-color: white;
     cursor: pointer;
-    transition: border-color 0.3s ease;
+    transition: all 0.3s ease;
 }
 
 .upload-box:hover {
-    border-color: var(--secondary-color);
+    border-color: var(--accent-dark);
+    background-color: var(--background-color);
 }
 
 .upload-box img {
@@ -97,7 +100,7 @@ main {
 }
 
 button {
-    background-color: var(--primary-color);
+    background-color: var(--accent-color);
     color: white;
     border: none;
     padding: 0.8rem 1.5rem;
@@ -109,7 +112,7 @@ button {
 }
 
 button:hover {
-    background-color: #357abd;
+    background-color: var(--accent-dark);
 }
 
 .results-section {
@@ -120,9 +123,18 @@ button:hover {
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+.history-section {
+    margin-top: 3rem;
+    background-color: white;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
 footer {
     text-align: center;
     padding: 2rem;
-    background-color: white;
+    background-color: var(--primary-color);
+    color: var(--background-color);
     margin-top: 3rem;
 } 
