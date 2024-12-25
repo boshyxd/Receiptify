@@ -6,12 +6,30 @@ from PIL import Image
 import io
 import re
 from datetime import datetime
+from services.firebase_service import firebase_service
+from functools import wraps
 
 app = Flask(__name__)
 CORS(app)
 
 # Initialize EasyOCR reader
 reader = easyocr.Reader(['en'])
+
+def require_auth(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({"error": "No authorization token provided"}), 401
+        
+        token = auth_header.split('Bearer ')[1]
+        user_id = firebase_service.verify_token(token)
+        
+        if not user_id:
+            return jsonify({"error": "Invalid token"}), 401
+        
+        return f(user_id, *args, **kwargs)
+    return decorated_function
 
 def process_receipt(image_bytes):
     """Process the receipt image and extract relevant information."""
@@ -25,8 +43,10 @@ def process_receipt(image_bytes):
         # Extract text from results
         text_results = [result[1] for result in results]
         
-        # TODO: Implement more sophisticated parsing logic
-        # This is a basic implementation that looks for price patterns
+        # Extract store name (assuming it's in the first few lines)
+        store_name = text_results[0] if text_results else "Unknown Store"
+        
+        # Look for price patterns and item names
         items = []
         for i, text in enumerate(text_results):
             # Look for price patterns ($XX.XX)
@@ -39,10 +59,8 @@ def process_receipt(image_bytes):
                     "price": price
                 })
         
-        # TODO: Extract store name and date
-        # For now, using placeholder data
         return {
-            "store": "Sample Store",
+            "store": store_name,
             "date": datetime.now().isoformat(),
             "items": items
         }
@@ -52,7 +70,8 @@ def process_receipt(image_bytes):
         return None
 
 @app.route('/api/upload', methods=['POST'])
-def upload_receipt():
+@require_auth
+async def upload_receipt(user_id):
     """Handle receipt upload and processing."""
     if 'receipt' not in request.files:
         return jsonify({"error": "No file provided"}), 400
@@ -62,17 +81,40 @@ def upload_receipt():
         return jsonify({"error": "No file selected"}), 400
     
     try:
-        # Read the image file
-        image_bytes = file.read()
-        
         # Process the receipt
-        result = process_receipt(image_bytes)
+        image_bytes = file.read()
+        file.seek(0)  # Reset file pointer for later use
         
+        result = process_receipt(image_bytes)
         if result is None:
             return jsonify({"error": "Failed to process receipt"}), 500
         
+        # Save to Firebase
+        receipt_id = await firebase_service.save_receipt(user_id, result, file)
+        result['id'] = receipt_id
+        
         return jsonify(result)
     
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/receipts', methods=['GET'])
+@require_auth
+def get_receipts(user_id):
+    """Get all receipts for the authenticated user."""
+    try:
+        receipts = firebase_service.get_user_receipts(user_id)
+        return jsonify(receipts)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/compare/<item_name>', methods=['GET'])
+@require_auth
+def compare_prices(user_id, item_name):
+    """Compare prices for a specific item across different stores."""
+    try:
+        prices = firebase_service.get_price_comparisons(item_name)
+        return jsonify(prices)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
